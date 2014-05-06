@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+#
+# elim.filesystems
+# Peter Doherty <peter_doherty@hms.harvard.edu>
+# 
+# This software is provided AS-IS with NO WARRANTY 
+# 
+# IBM/Platform LSF ELIM (External Load Index Monitor) for determining if a network filesystem is mounted and available
+# tested with LSF 7.0.6
+# tested with Debian Squeeze
+
+import subprocess
+import time
+import threading
+import sys
+
+# Dictionary of friendly resource names, and their corresponding filesystem path
+filesystems = { 'resource_name1': '/path/to/resource1', 'resource_name2': '/path/to/resource2' }
+
+# We use mountpoint to determine if the filesystem is mounted.  return code of 0 means mounted, 1 means not.
+mountpoint_cmd = '/bin/mountpoint'
+mountpoint_args = '-q'
+
+# Timeout function to kill the mountpoint command if it hangs ( ie: NFS server unavailable)
+def timeout(p):
+  if p.poll() == None:
+    try:
+      p.kill()
+    except:
+      pass
+
+# Main function to run mountpoint against the paths, and return a dictionary of resource names, and a 0/1 value
+def check_mounts(in_fs):
+  d_results = {}
+  for fs in in_fs.keys():
+    cmd = [mountpoint_cmd, mountpoint_args, in_fs[fs]]
+    p = subprocess.Popen(cmd)
+    t = threading.Timer( 5.0, timeout, [p] )
+    t.start()
+    p.wait()
+    # If the timer killed the process, we get a return code of -9 ( for SIGKILL, so we set the state to 0 )
+    # Otherwise we set the state to the inverse of the return code
+    if p.returncode < 0:
+      state = 0
+    else:
+      state = p.returncode ^ 1
+    d_results[fs] = state
+    t.cancel()
+  return d_results
+
+# Run continuously, printing results every 60 seconds.  If the script dies, the MELIM can restart it for us.
+while True:
+  results = check_mounts(filesystems)
+  str_result = [str(word) for tup in results.items() for word in tup]
+  sys.stdout.write("%s %s\n" % (len(results), ' '.join(str_result)))
+  sys.stdout.flush()
+  time.sleep(60)
