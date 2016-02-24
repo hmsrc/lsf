@@ -1,0 +1,13 @@
+#!/bin/sh
+while :
+do
+  # calc total gpu cards
+  total=`lspci | egrep -i nvidia | egrep -i 'vga|3d|2d' | wc -l`  
+  # create an output string in the format:
+  # number_indices index1_name index1_value...
+  reportStr="1 ngpus $total"
+  echo "$reportStr"
+  # wait for 60 seconds before reporting again
+  sleep 60
+done
+
