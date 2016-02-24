@@ -1,0 +1,14 @@
+#!/bin/sh
+# Author: Ananta Chakravartula 
+# Description: checks ngpu flag for gpu queue and exits with warning if not mentioned in bsub command
+# Tested on LSF 7.0
+
+. $LSB_SUB_PARM_FILE
+
+if [ "$LSB_SUB_QUEUE" = "gpu" ]; then
+n=`echo $LSB_SUB_RES_REQ| grep ngpu | awk -Fngpus= '{print $2}'|grep -o '[0-9]*'`
+if [ -z "$n" ]; then
+echo 'You must request resource with -R "rusage[ngpus=NUMBER_OF_GPU_REQUIRED]" '  >&2
+    exit $LSB_SUB_ABORT_VALUE
+fi
+fi
