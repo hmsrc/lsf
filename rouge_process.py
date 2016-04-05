@@ -47,7 +47,7 @@ for pid in process.split():
 
 # get lsf process pids
 
-LSF_PIDS=subprocess.Popen("service lsf status |   grep -o '[0-9]*'",stdout=subprocess.PIPE,shell=True).communicate()[0].strip()
+LSF_PIDS=subprocess.Popen("/sbin/service lsf status |   grep -o '[0-9]*'",stdout=subprocess.PIPE,shell=True).communicate()[0].strip()
 for pid in LSF_PIDS.split():
 	WHITELIST.append(pid)
 	LSFPIDS.append(pid)
